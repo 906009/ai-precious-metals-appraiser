@@ -27,10 +27,19 @@ def calculate_jewelry_cost(
     weight: Optional[float], 
     has_inserts: bool, 
     ai_defects: bool, 
-    ai_damaged_inserts: bool
+    ai_damaged_inserts: bool,
+    ai_estimated_weight: Optional[float] = None
 ):
-    # Если вес не указан, берем закрепленный за данным типом базовый вес
-    base_weight = weight if weight is not None else TARIFF_GRID["default_weights"].get(item_type, 4.0)
+    # Приоритет выбора веса: 
+    # 1. Вес от пользователя
+    # 2. Оценка веса от ИИ
+    # 3. Базовый вес по типу изделия
+    if weight is not None:
+        used_weight = weight
+    elif ai_estimated_weight is not None:
+        used_weight = ai_estimated_weight
+    else:
+        used_weight = TARIFF_GRID["default_weights"].get(item_type, 4.0)
     
     if purity == "Невозможно определить":
         price_per_gram = min(TARIFF_GRID["gold_prices"].values())
@@ -41,7 +50,7 @@ def calculate_jewelry_cost(
     cond_coeff = TARIFF_GRID["condition_coefficients"].get(condition, 1.0)
     
     # Расчет базовой стоимости
-    estimated_value = base_weight * price_per_gram * type_coeff * cond_coeff
+    estimated_value = used_weight * price_per_gram * type_coeff * cond_coeff
     
     # Корректировка на наличие вставок:
     # При оценке золота вес камней высчитываем из общего веса
@@ -65,5 +74,6 @@ def calculate_jewelry_cost(
     return {
         "loan_amount": round(estimated_value * 0.8),    # Сумма займа (80% от оценки)
         "buyout_amount": round(estimated_value * 0.95), # Сумма выкупа (95% от оценки)
+        "used_weight": round(used_weight, 2),           # Использованный в расчетах вес
         "probability": probability
     }

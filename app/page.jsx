@@ -947,16 +947,43 @@ export default function HomePage() {
                   addFiles(event.dataTransfer.files);
                 }}
               >
-                <div className="mb-5 flex h-16 w-16 items-center justify-center rounded-full bg-[#fff0f0] text-xl font-bold text-[#d50000]">
-                  01
+                <div className="mb-6 grid grid-cols-1 gap-6 text-left md:grid-cols-2">
+                  <div className="space-y-4">
+                    <div className="flex items-center gap-3">
+                      <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#d50000] text-sm font-bold text-white">1</div>
+                      <p className="text-sm font-bold text-[#161616]">Освещение и фон</p>
+                    </div>
+                    <p className="pl-11 text-xs leading-5 text-[#666]">
+                      Используйте яркое дневное освещение. Разместите изделие на однотонном светлом фоне без лишних предметов.
+                    </p>
+                    
+                    <div className="flex items-center gap-3">
+                      <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#d50000] text-sm font-bold text-white">2</div>
+                      <p className="text-sm font-bold text-[#161616]">Расстояние и фокус</p>
+                    </div>
+                    <p className="pl-11 text-xs leading-5 text-[#666]">
+                      Снимайте с расстояния 15-20 см. Убедитесь, что камера сфокусирована, а изделие занимает большую часть кадра.
+                    </p>
+                  </div>
+                  
+                  <div className="space-y-4">
+                    <div className="flex items-center gap-3">
+                      <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#d50000] text-sm font-bold text-white">3</div>
+                      <p className="text-sm font-bold text-[#161616]">Ракурс и проба</p>
+                    </div>
+                    <p className="pl-11 text-xs leading-5 text-[#666]">
+                      Сделайте фото общего вида и макроснимок пробы (клейма), если это возможно.
+                    </p>
+
+                    <div className="flex items-center gap-3">
+                      <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#d50000] text-sm font-bold text-white">4</div>
+                      <p className="text-sm font-bold text-[#161616]">Масштаб (рекомендуем)</p>
+                    </div>
+                    <p className="pl-11 text-xs leading-5 text-[#666]">
+                      Положите рядом с изделием стандартную монету (5 или 10 рублей) для более точной оценки веса.
+                    </p>
+                  </div>
                 </div>
-                <p className="mb-2 text-lg font-semibold text-[#161616]">
-                  Перетащите фотографии украшения сюда
-                </p>
-                <p className="mb-6 max-w-md text-sm leading-6 text-[#666]">
-                  Поддерживается от 1 до 2 изображений. Желательны четкие
-                  ракурсы пробы, общей формы и заметных дефектов.
-                </p>
 
                 <input
                   accept="image/*"
@@ -968,11 +995,11 @@ export default function HomePage() {
                 />
 
                 <button
-                  className="rounded-full border border-[#161616] px-5 py-3 text-sm font-semibold text-[#161616] transition hover:bg-[#161616] hover:text-white"
+                  className="mt-4 rounded-full border border-[#161616] px-8 py-3 text-sm font-semibold text-[#161616] transition hover:bg-[#161616] hover:text-white"
                   onClick={() => fileInputRef.current?.click()}
                   type="button"
                 >
-                  Выбрать файлы
+                  Выбрать фотографии
                 </button>
               </div>
 
@@ -1036,12 +1063,20 @@ export default function HomePage() {
                 <ProbabilityBadge value={result.probability} />
               </div>
 
-              {result.ai_report && (result.ai_report.defect_description || result.ai_report.other_visual_features) ? (
+              {result.ai_report && (result.ai_report.defect_description || result.ai_report.other_visual_features || (!form.weight.trim() && result.used_weight)) ? (
                 <div className="mt-6 rounded-[1.8rem] border border-[#e0e7ff] bg-[#f5f7ff] p-5">
                   <p className="mb-3 text-sm font-semibold uppercase tracking-[0.22em] text-[#4f46e5]">
                     Оценка ИИ
                   </p>
                   <div className="space-y-3">
+                    {!form.weight.trim() && result.used_weight ? (
+                      <div>
+                        <span className="font-semibold text-[#1e1b4b]">Учтенный вес: </span>
+                        <span className="text-[#312e81]">
+                          ~{result.used_weight} г {result.ai_report.estimated_weight ? "(оценено по фото)" : "(средний для типа)"}
+                        </span>
+                      </div>
+                    ) : null}
                     {result.ai_report.defect_description && result.ai_report.defect_description !== "Нет" && result.ai_report.defect_description !== "нет" ? (
                       <div>
                         <span className="font-semibold text-[#1e1b4b]">Дефекты: </span>

@@ -8,7 +8,7 @@ echo [1] Запуск FastAPI (Backend)...
 start "FastAPI Backend" cmd /k "pip install -r requirements.txt && uvicorn main:app --host 0.0.0.0 --port 8000 --reload"
 
 echo [2] Запуск Next.js (Frontend)...
-start "Next.js Frontend" cmd /k "npm install && npm run build && npm start"
+start "Next.js Frontend" cmd /k "npm install && npm run dev"
 
 echo.
 echo Все процессы запущены в отдельных окнах!

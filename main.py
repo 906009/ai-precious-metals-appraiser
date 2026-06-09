@@ -88,11 +88,19 @@ async def estimate_jewelry(
 
     system_prompt = (
         "Ты — эксперт-товаровед в ювелирном ломбарде СКС Ломбард. Твоя задача — проанализировать фотографии изделия. "
-        "Ты должен определить: действительно ли на фото золотое ювелирное украшение (is_jewelry: true/false), "
-        "тип изделия (Кольцо/Серьги/Браслет/Кулон/Цепь/Колье), наличие вставок (true/false), "
-        "состояние изделия (Как новое/Среднее/Плохое), наличие визуальных дефектов (царапины, потертости, деформация) (true/false), "
-        "повреждения вставок (true/false), детальное описание выявленных дефектов, а также "
-        "иные визуальные характеристики изделия (например, цвет золота, плетение, форма, огранка камня и т.д.). "
+        "1. Проверь качество фото и соответствие правилам: "
+        "   - Фото НЕ должно быть на теле (на руке, пальце, шее). Если на фото видна кожа человека — это нарушение. "
+        "   - Фон должен быть однотонным и контрастным. Если изделие сливается с фоном или фон пестрый — это нарушение. "
+        "   - Если есть нарушения правил фото, установи is_jewelry: false и в defect_description напиши конкретную причину (например: 'Фото сделано на руке, а не на однотонном фоне' или 'Изделие сливается с фоном'). "
+        "2. Если загружено более одной фотографии, ОБЯЗАТЕЛЬНО проверь, изображено ли на них ОДНО И ТО ЖЕ изделие. "
+        "   - Если на фото разные изделия, установи is_jewelry: false и в defect_description напиши 'На фотографиях изображены разные изделия'. "
+        "3. Определи, действительно ли на фото золотое ювелирное украшение (is_jewelry: true/false). "
+        "4. Синтезируй информацию со всех ракурсов: если на одном фото виден дефект, а на другом нет — дефект существует. "
+        "5. Определи: тип изделия (Кольцо/Серьги/Браслет/Кулон/Цепь/Колье), наличие вставок (true/false), "
+        "состояние изделия (Как новое/Среднее/Плохое), наличие визуальных дефектов (true/false), "
+        "повреждения вставок (true/false). "
+        "6. Оцени примерный вес изделия в граммах (estimated_weight). Если на фото есть монета для масштаба, используй её для точности. "
+        "7. Укажи иные визуальные характеристики изделия. "
         "Используй инструмент 'respond_with_analysis' для ответа."
     )
 
@@ -140,11 +148,12 @@ async def estimate_jewelry(
         print(f"CRITICAL ERROR in estimate_jewelry: {traceback.format_exc()}")
         raise HTTPException(status_code=500, detail=f"Ошибка анализа Mistral AI: {str(e)}")
 
-    # Антифрод
+    # Антифрод и валидация качества
     if not ai_data.is_jewelry:
+        error_msg = ai_data.defect_description if ai_data.defect_description else "Изображение не содержит золотых ювелирных изделий или имеет крайне низкое качество."
         raise HTTPException(
             status_code=400, 
-            detail="ИИ определил, что объект на изображении не является золотым ювелирным украшением."
+            detail=f"Ошибка валидации: {error_msg}. Пожалуйста, сделайте новое фото согласно инструкции."
         )
 
     # Проверка совпадения типа изделия
@@ -162,12 +171,14 @@ async def estimate_jewelry(
         weight=weight,
         has_inserts=has_inserts_bool,
         ai_defects=ai_data.has_visual_defects,
-        ai_damaged_inserts=ai_data.damaged_inserts
+        ai_damaged_inserts=ai_data.damaged_inserts,
+        ai_estimated_weight=ai_data.estimated_weight
     )
 
     return EstimateResponse(
         loan_amount=calc_results["loan_amount"],
         buyout_amount=calc_results["buyout_amount"],
+        used_weight=calc_results["used_weight"],
         probability=calc_results["probability"],
         ai_report=ai_data
     )
@@ -187,6 +198,7 @@ async def create_lead_in_bitrix24(payload: LeadCreateRequest):
                 f"Предварительная сумма займа: {payload.calculation.get('loan_amount', 0)} руб.\n"
                 f"Оценка состояния: {payload.ai_results.condition_assessment}\n"
                 f"Выявленные дефекты: {payload.ai_results.defect_description}\n"
+                f"Использованный вес: {payload.calculation.get('used_weight', 'Неизвестно')} г\n"
                 f"Вероятность принятия: {payload.calculation.get('probability', 'Неизвестно')}\n"
                 f"Иные визуальные характеристики: {payload.ai_results.other_visual_features}\n"
                 f"Выбранный филиал: {payload.branch_id}"

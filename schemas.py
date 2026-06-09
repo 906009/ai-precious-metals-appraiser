@@ -18,12 +18,14 @@ class AIAnalysisResult(BaseModel):
     has_visual_defects: bool = Field(..., description="Наличие визуальных дефектов (true/false)")
     damaged_inserts: bool = Field(..., description="Повреждения вставок (true/false)")
     defect_description: str = Field(..., description="Описание выявленных дефектов")
+    estimated_weight: Optional[float] = Field(None, description="Примерный вес изделия в граммах, оцененный по фото")
     other_visual_features: Optional[str] = Field(None, description="Иные визуальные характеристики")
 
 # Финальный ответ для фронтенда
 class EstimateResponse(BaseModel):
     loan_amount: int
     buyout_amount: int
+    used_weight: float
     probability: str
     ai_report: AIAnalysisResult
     warning_message: str = Field(
